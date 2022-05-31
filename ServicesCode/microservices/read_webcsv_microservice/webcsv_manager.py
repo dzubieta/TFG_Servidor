@@ -23,8 +23,8 @@ longs = ["-3.40", "-3.66", "-3.39", "-3.70", "-3.73", "-3.45", "-3.57", "-3.42",
          "-3.46", "-4.00", "-3.32", "-3.48", "-3.43", "-3.42", "-3.45", "-3.52", "-3.52", "-3.13", "-3.57", "-3.32", "-4.23", "-3.28", "-3.40",
          "-4.16", "-3.16"]
 
-
-urls = ["https://www.mambiente.madrid.es/opendata/horario.csv", "https://datos.comunidad.madrid/catalogo/dataset/cb5b856f-71a4-4e34-8539-84a7e994c972/resource/9fd86617-370a-4770-8a92-0c42ea02d6a1/download/calidad_aire_datos_dia.csv"]
+"https://www.mambiente.madrid.es/opendata/horario.csv",
+urls = ["https://datos.comunidad.madrid/catalogo/dataset/cb5b856f-71a4-4e34-8539-84a7e994c972/resource/9fd86617-370a-4770-8a92-0c42ea02d6a1/download/calidad_aire_datos_dia.csv"]
 
 
 def connect_database():
@@ -74,59 +74,81 @@ def get_last_hour_from_file(row):
     return hour
 
 
-def web_register():
-    try:
-        for u, val in enumerate(urls):
+def web_register(data):
+    carga = data.get('fichero', None)
+    print(carga)
+    if carga == "true" or carga is None or carga == '':
+        try:
+            for u, val in enumerate(urls):
+                conn = connect_database()
+                url = urls[u]
+                data = download_from_url(url)
+                data.head()
+                if conn.is_connected():
+                    cursor = conn.cursor()
+                    cursor.execute("select database();")
+                    record = cursor.fetchone()
+                    print("You're connected to database: ", record)
+                    now = datetime.now()
+                    for i, row in data.iterrows():
+                        # como en la definicion de requisitos esta definido que solo nos interesan unos gases en concreto, seleccionamos esos gases al leer el campo "magnitud" del dataframe
+                        if row["MAGNITUD"] == 6:  # Si es monoxido de carbono, CO
+                            for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
+                                if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
+                                    print(row)
+                                    sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
+                                    date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
+                                    data = (lats[j], longs[j], date, get_last_hour_from_file(row), "CO", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
+                                    cursor.execute(sql, data)
+                                    print("Record inserted")
+                                    conn.commit()
+                        if row["MAGNITUD"] == 8:  # si es dioxido de nitrogeno, NO2
+                            for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
+                                if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
+                                    sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
+                                    date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
+                                    data = (lats[j], longs[j], date, get_last_hour_from_file(row), "NO2", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
+                                    cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
+                                    print("Record inserted")
+                                    conn.commit()
+                        elif row["MAGNITUD"] == 14:  # si es ozono, O3
+                            for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
+                                if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
+                                    sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
+                                    date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
+                                    data = (lats[j], longs[j], date, get_last_hour_from_file(row), "O3", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
+                                    cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
+                                    print("Record inserted")
+                                    conn.commit()
+                        elif row["MAGNITUD"] == 1:  # si es dioxido de azufre, SO2
+                            for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
+                                if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
+                                    sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
+                                    date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
+                                    data = (lats[j], longs[j], date, get_last_hour_from_file(row), "SO2", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
+                                    cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
+                                    print("Record inserted")
+                                    conn.commit()
+            return True
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+            return False
+    else:
+        try:
             conn = connect_database()
-            url = urls[u]
-            data = download_from_url(url)
-            data.head()
             if conn.is_connected():
                 cursor = conn.cursor()
                 cursor.execute("select database();")
                 record = cursor.fetchone()
                 print("You're connected to database: ", record)
                 now = datetime.now()
-                for i, row in data.iterrows():
-                    # como en la definicion de requisitos esta definido que solo nos interesan unos gases en concreto, seleccionamos esos gases al leer el campo "magnitud" del dataframe
-                    if row["MAGNITUD"] == 6:  # Si es monoxido de carbono, CO
-                        for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
-                            if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
-                                print(row)
-                                sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
-                                date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
-                                data = (lats[j], longs[j], date, get_last_hour_from_file(row), "CO", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
-                                cursor.execute(sql, data)
-                                print("Record inserted")
-                                conn.commit()
-                    if row["MAGNITUD"] == 8:  # si es dioxido de nitrogeno, NO2
-                        for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
-                            if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
-                                sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
-                                date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
-                                data = (lats[j], longs[j], date, get_last_hour_from_file(row), "NO2", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
-                                cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
-                                print("Record inserted")
-                                conn.commit()
-                    elif row["MAGNITUD"] == 14:  # si es ozono, O3
-                        for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
-                            if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
-                                sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
-                                date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
-                                data = (lats[j], longs[j], date, get_last_hour_from_file(row), "O3", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
-                                cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
-                                print("Record inserted")
-                                conn.commit()
-                    elif row["MAGNITUD"] == 1:  # si es dioxido de azufre, SO2
-                        for j, val in enumerate(stations):  # recorremos el array de estaciones, para ir encontrando cada estacion
-                            if row["PUNTO_MUESTREO"].find(stations[j]) != -1:
-                                sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
-                                date = str(row[7]) + '/' + str(row[6]) + '/' + str(row[5])  # concatenamos los campos que de las fechas (anyo, mes, dia)
-                                data = (lats[j], longs[j], date, get_last_hour_from_file(row), "SO2", get_last_value_from_file(row), "static", now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], "web")
-                                cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
-                                print("Record inserted")
-                                conn.commit()
-        return True
-    except Error as e:
-        print("Error while connecting to MySQL", e)
-        return False
+                sql = "INSERT INTO tfgdata2 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"  # sentencia SQL de insercion
+                data = (data['latitud'], data['longitud'], data['date'], data['hour'], data['gas'], data['gas_value'], data['station_type'],now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], data['origin_measure'])
+                cursor.execute(sql, data)  # ejecutamos la sentencia SQL con los datos que queremos
+                print("Record inserted")
+                conn.commit()
+                return True
+            return False
+        except Error as e:
+            print("Error while connecting to MySQL", e)
+            return False

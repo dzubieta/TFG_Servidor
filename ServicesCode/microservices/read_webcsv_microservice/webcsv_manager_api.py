@@ -10,7 +10,9 @@ CORS(app)
 
 @app.route('/webcsv/register/', methods=['POST'])
 def insert_csv_data():
-    if web_register():
+    data = request.form
+
+    if web_register(data):
         return {"result": "record inserted"}, 201
     else:
         return {"result": "Error: record not inserted"}, 500

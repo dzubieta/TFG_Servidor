@@ -32,6 +32,7 @@ def connect_database():
 
     return conn
 
+
 def get_comma_pos(str):
     for pos, a in enumerate(str):
         if a == ".":
