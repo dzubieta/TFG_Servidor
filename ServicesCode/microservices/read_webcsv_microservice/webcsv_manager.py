@@ -23,8 +23,8 @@ longs = ["-3.40", "-3.66", "-3.39", "-3.70", "-3.73", "-3.45", "-3.57", "-3.42",
          "-3.46", "-4.00", "-3.32", "-3.48", "-3.43", "-3.42", "-3.45", "-3.52", "-3.52", "-3.13", "-3.57", "-3.32", "-4.23", "-3.28", "-3.40",
          "-4.16", "-3.16"]
 
-"https://www.mambiente.madrid.es/opendata/horario.csv",
-urls = ["https://datos.comunidad.madrid/catalogo/dataset/cb5b856f-71a4-4e34-8539-84a7e994c972/resource/9fd86617-370a-4770-8a92-0c42ea02d6a1/download/calidad_aire_datos_dia.csv"]
+
+urls = ["https://www.mambiente.madrid.es/opendata/horario.csv", "https://datos.comunidad.madrid/catalogo/dataset/cb5b856f-71a4-4e34-8539-84a7e994c972/resource/9fd86617-370a-4770-8a92-0c42ea02d6a1/download/calidad_aire_datos_dia.csv"]
 
 
 def connect_database():
