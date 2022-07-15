@@ -1,4 +1,0 @@
-webcsv_microservice_server: "localhost"
-webcsv_microservice_port: "5001"
-host: "localhost"
-port: 8080
